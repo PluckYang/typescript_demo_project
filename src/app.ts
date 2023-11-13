@@ -1,3 +1,40 @@
+// Validation interface
+interface Validatable {
+  value: string | number;
+  required?: boolean;
+  minLength?: number;
+  maxLength?: number;
+  min?: number;
+  max?: number;
+}
+
+// Validation function
+function validate(ValidatableInpute: Validatable) {
+  let isValid = true;
+  if (ValidatableInpute.required) {
+    isValid = isValid && ValidatableInpute.value.toString().trim().length !== 0;
+  }
+  if (
+    ValidatableInpute.minLength != null && 
+    typeof ValidatableInpute.value === 'string'
+  ) {
+    isValid = isValid && ValidatableInpute.value.length > ValidatableInpute.minLength;
+  }
+  if (
+    ValidatableInpute.maxLength != null && 
+    typeof ValidatableInpute.value === 'string'
+  ) {
+    isValid = isValid && ValidatableInpute.value.length < ValidatableInpute.maxLength;
+  }
+  if (ValidatableInpute.min != null && typeof ValidatableInpute.value === 'number') {
+    isValid = isValid && ValidatableInpute.value > ValidatableInpute.min;
+  }
+  if (ValidatableInpute.max != null && typeof ValidatableInpute.value === 'number') {
+    isValid = isValid && ValidatableInpute.value < ValidatableInpute.max;
+  }
+  return isValid;
+}
+
 // autobind decorator
 function autobind(
   //"_"で定義されたが、使われてい無いparameterを表示
@@ -44,11 +81,55 @@ class ProjectInput {
     this.attach();
   }
 
+  private gatherUserInput(): [string, string, number] | void {
+    const enteredTitle = this.titleInputElement.value;
+    const enteredDescription = this.descriptionInputElement.value;
+    const enteredPeople = this.peopleInputElement.value;
+
+    const titleValidatable: Validatable = {
+      value: enteredTitle,
+      required: true,
+    };
+    const descriptionValidatable: Validatable = {
+      value: enteredDescription,
+      required: true,
+      minLength: 5
+    };
+    const peopleValidatable: Validatable = {
+      value: +enteredPeople,
+      required: true,
+      min: 1,
+      max: 5
+    };
+
+    if (
+      !validate(titleValidatable) ||
+      !validate(descriptionValidatable) ||
+      !validate(peopleValidatable)
+    ) {
+        alert('Invalid input, please try again!');
+        return;
+    } else {
+      return [enteredTitle, enteredDescription, +enteredPeople];
+    }
+  }
+
+  private clearInputs() {
+    this.titleInputElement.value = '';
+    this.descriptionInputElement.value = '';
+    this.peopleInputElement.value = '';
+  }
+
   @autobind
   private submitHandler(event: Event) {
     // デフォルトのHTML requestを避ける
     event.preventDefault();
-    console.log(this.titleInputElement.value);
+    const userInpute = this.gatherUserInput();
+    if (Array.isArray(userInpute)) {
+      const [title, desc, people] = userInpute;
+      console.log(title, desc, people);
+      this.clearInputs();
+    }    
   }
 
   private configure() {
